@@ -1,0 +1,11 @@
+.git*
+.vscode
+
+**/Dockerfile*
+**/docker-compose*
+
+**/uploads
+
+/backup
+
+Makefile

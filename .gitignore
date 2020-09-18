@@ -1,0 +1,12 @@
+# TODO
+
+# System
+**.DS_Store
+
+# Sources
+**/node_modules/
+**/uploads/
+**/*.css
+
+# Keep
+!**/.keep

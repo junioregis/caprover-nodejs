@@ -1,0 +1,112 @@
+captainVersion: 4
+
+caproverOneClickApp:
+  variables:
+    - id: $$cap_node_env
+      label: Node Env
+      description: Must be "staging" or "production".
+      defaultValue: production
+    - id: $$cap_db_port
+      label: Database Port
+      defaultValue: 5432
+    - id: $$cap_db_name
+      label: Database Name
+      defaultValue: db
+    - id: $$cap_db_user
+      label: Database User
+      defaultValue: postgres
+    - id: $$cap_db_pass
+      label: Database Pass
+      defaultValue: postgres
+    - id: $$cap_db_admin_user
+      label: Database Admin User
+      defaultValue: admin@domain.com
+    - id: $$cap_db_admin_pass
+      label: Database Admin Pass
+      defaultValue: admin
+
+  instructions:
+    start: >-
+      Description.
+    end: >
+      Description.
+  displayName: Skeleton
+  isOfficial: false
+  description: Node 14, Postgres 11 with Postgis, Redis 5, Selenium with Chrome and Backup Ready!
+  documentation: Documentation
+
+services:
+  $$cap_appname-app:
+    restart: always
+    image: node:14-alpine
+    volumes:
+      - $$cap_appname-uploads:/app/uploads
+    environment:
+      NODE_ENV: $$cap_node_env
+    depends_on:
+      - $$cap_appname-postgres
+      - $$cap_appname-redis
+      - $$cap_appname-selenium
+    caproverExtra:
+      containerHttpPort: "3000"
+
+  $$cap_appname-postgres:
+    restart: always
+    image: mdillon/postgis:11-alpine
+    volumes:
+      - $$cap_appname-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: $$cap_db_name
+      POSTGRES_USER: $$cap_db_user
+      POSTGRES_PASSWORD: $$cap_db_pass
+    caproverExtra:
+      notExposeAsWebApp: "true"
+      containerHttpPort: "5432"
+
+  $$cap_appname-redis:
+    restart: always
+    image: redis:5-alpine
+    volumes:
+      - $$cap_appname-redis:/data
+    caproverExtra:
+      notExposeAsWebApp: "true"
+      containerHttpPort: "6379"
+
+  $$cap_appname-selenium:
+    restart: always
+    image: selenium/standalone-chrome:latest
+    volumes:
+      - /dev/shm:/dev/shm
+    caproverExtra:
+      notExposeAsWebApp: "true"
+      containerHttpPort: "4444"
+
+  $$cap_appname-postgres-admin:
+    restart: always
+    image: dpage/pgadmin4:latest
+    volumes:
+      - $$cap_appname-db-admin:/var/lib/pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: $$cap_db_admin_user
+      PGADMIN_DEFAULT_PASSWORD: $$cap_db_admin_pass
+    depends_on:
+      - $$cap_appname-postgres
+    caproverExtra:
+      containerHttpPort: "80"
+
+  $$cap_appname-backup:
+    restart: always
+    image: alpine:3.12
+    volumes:
+      - $$cap_appname-uploads:/tmp/uploads:ro
+      - /backup:/backup
+    environment:
+      DB_HOST: srv-captain--$$cap_appname-postgres
+      DB_PORT: $$cap_db_port
+      DB_NAME: $$cap_db_name
+      DB_USER: $$cap_db_user
+      DB_PASS: $$cap_db_pass
+    depends_on:
+      - $$cap_appname-app
+    caproverExtra:
+      notExposeAsWebApp: "true"
